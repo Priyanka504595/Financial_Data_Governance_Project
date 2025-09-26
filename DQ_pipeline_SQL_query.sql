@@ -463,3 +463,37 @@ SELECT COUNT(*) AS Dup_Txn
 FROM prod.Transactions
 GROUP BY Transaction_ID
 HAVING COUNT(*) > 1;
+
+
+
+
+
+-- Invalid Changes Check
+
+-- Insert passes the Settlement check, but has an invalid currency 'XXA'
+INSERT INTO staging.Transactions_Staging
+( Transaction_ID, Account_Number, Security_ID, Trade_Date, Settlement_Date,
+  Quantity, Price, Trade_Amount, Status, Currency_Code )
+VALUES
+( 999998, '00120894', 'SEC00001',
+  '2025-09-22',
+  '2025-09-20',   
+  100, 10.00, 1000.00,
+  'Settled',
+  'CCA');         -- invalid (should be flagged by DQ)
+
+
+Select * FROM staging.Transactions_Staging
+WHERE Transaction_ID = '999998';
+
+--  quick delete
+DELETE FROM staging.Transactions_Staging
+WHERE Transaction_ID = '999998';
+
+
+-- Verify it's gone
+SELECT * FROM staging.dq_exceptions;
+SELECT * FROM staging.dq_run_log;
+
+DELETE FROM staging.dq_exceptions;
+DELETE FROM staging.dq_run_log;
